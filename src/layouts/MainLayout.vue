@@ -1,6 +1,6 @@
 <template>
   <Suspense>
-    <q-layout view="hHh Lpr lff">
+    <q-layout view="hHh LpR lFf">
       <q-header elevated>
         <q-toolbar>
           <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
@@ -11,9 +11,9 @@
         </q-toolbar>
       </q-header>
 
-      <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
+      <q-drawer v-model="leftDrawerOpen" :overlay="false" show-if-above bordered>
         <q-scroll-area class="fit">
-          <q-list>
+          <!-- <q-list>
             <q-expansion-item v-for="gml in gmlList" :key="gml.sha" :label="gml.name" v-bind="gml">
               <template v-slot:default>
                 <div style="padding-left: 21.6px; ">
@@ -25,7 +25,25 @@
                   </q-list>
                 </div>
               </template>
-            </q-expansion-item>
+</q-expansion-item>
+</q-list> -->
+          <q-list>
+            <template v-for="item in fullStructure" :key="item.sha">
+              <q-expansion-item v-if="item.type !== 'file'" :label="item.name">
+                <template v-slot:default>
+                  <div style="padding-left: 21.6px">
+                    <q-list style="border-left: 1px solid rgba(0, 0, 0, .12)">
+                      <!-- Add the prop declaration here -->
+                      <NestedStructure :items="item.children || []" />
+                    </q-list>
+                  </div>
+                </template>
+              </q-expansion-item>
+
+              <q-item v-else clickable v-ripple @click="console.log(item)">
+                <q-item-section>{{ cleanPath(item.path) }}</q-item-section>
+              </q-item>
+            </template>
           </q-list>
         </q-scroll-area>
       </q-drawer>
@@ -40,6 +58,7 @@
 <script setup>
 import { ref, provide } from 'vue'
 // import EssentialLink from 'components/EssentialLink.vue'
+import NestedStructure from 'components/NestedStructure.vue'
 import { CONFIG } from "src/keys";
 
 async function fetchConfig() {
@@ -77,6 +96,47 @@ async function fetchGml() {
   }
 }
 const gmlList = ref(await fetchGml());
+console.log(gmlList);
+
+async function fetchData(url) {
+  try {
+    const response = await fetch(url);
+    return await response.json();
+  } catch (error) {
+    console.error('Fetch error:', error);
+    return null;
+  }
+}
+
+async function processItem(item) {
+  if (item.type === 'file') {
+    return item;
+  }
+
+  // If it's a directory, fetch its contents
+  const contents = await fetchData(item.url);
+  if (!contents) return null;
+
+  // Process children recursively
+  const children = await Promise.all(
+    contents.map(child => processItem(child))
+  );
+
+  return {
+    ...item,
+    children: children.filter(Boolean) // Remove nulls
+  };
+}
+
+async function loadFullStructure() {
+  const initialData = await fetchData(config.GITHUB_API_URL);
+  return await Promise.all(
+    initialData.map(item => processItem(item))
+  );
+}
+
+const fullStructure = await loadFullStructure();
+console.log(fullStructure);
 
 const leftDrawerOpen = ref(false)
 
