@@ -1,24 +1,22 @@
 <template>
-  <!-- <q-page class="flex flex-center">
-    <img
-      alt="Quasar logo"
-      src="~assets/quasar-logo-vertical.svg"
-      style="width: 200px; height: 200px"
-    >
-  </q-page> -->
   <div id="map" style="width: 100%; height: 94vh;"></div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, ref, provide, inject } from 'vue';
 import Map from 'ol/Map.js';
 import OSM from 'ol/source/OSM.js';
 import TileLayer from 'ol/layer/Tile.js';
 import View from 'ol/View.js';
+import { fromLonLat } from 'ol/proj';
 import 'ol/ol.css'; // Import OpenLayers CSS
+import { CONFIG } from "src/keys";
+
+const map = ref(null);
+const config = inject(CONFIG);
 
 onMounted(() => {
-  const map = new Map({
+  map.value = new Map({
     target: 'map',
     layers: [
       new TileLayer({
@@ -26,11 +24,13 @@ onMounted(() => {
       }),
     ],
     view: new View({
-      center: [0, 0],
-      zoom: 2,
+      center: fromLonLat(config.HONG_KONG_CENTER),
+      zoom: config.DEFAULT_ZOOM,
     }),
   });
-  console.log(map);
 });
+// Provide the map as a global constant
+provide('globalMap', map);
+// provide('CONFIG', config);
 
 </script>

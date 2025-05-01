@@ -3,3 +3,15 @@
 //   width: 100%;
 //   height: 500px;
 // }
+
+.q-expansion-item--expanded > div > .q-item > .q-item__section--main {
+  color: darkcyan;
+}
+
+.q-expansion-item--expanded
+  > div
+  > .q-item
+  > .q-item__section--side
+  .q-expansion-item__toggle-icon {
+  color: darkcyan;
+}
